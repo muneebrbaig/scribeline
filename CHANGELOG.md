@@ -7,11 +7,14 @@
 - Resolver output has `issue_templates` (issue forms found in the repo) and `first_run` (no config yet). The exit code now follows `status`: 0 resolved, 2 unresolved, 3 blocked.
 - `SKILL.md`: rules for the confirm gate when the request already says "create", the one-time first-run question (asked after the task, never instead of it), what "run the prose cleanup" means, who supplies evidence, test-content rules, and thresholds for the two agents (5 or more attachments, 10 or more evidence files).
 - `references/publishing.md`: delete and list recipes for wiki pages, closing an issue, which issue URL to link, and the limits on upload cleanup and image checks.
+- README has an "Invoking" section: the slash command, automatic loading from the description, and how to switch it off.
 
 ### Fixed
 - A wiki PUT without `title` moved the page to the wiki root. The docs and `page.py` now always send it.
 
 ### Changed
+- The skill description now says it writes and publishes pages and tickets, not the work a ticket describes, to keep it apart from implementation skills.
+- `references/publishing.md`: after removing GitHub wiki test files, check the page URL and the repo listing. Raw image URLs can outlive the file.
 - `references/publishing.md` has a "Screenshots on a page" section: collapsed `<details>` with a caption row and one image per cell, for both GitLab and GitHub.
 - GitHub wiki steps in `references/publishing.md` now reflect a live run: clone and push over the SSH alias, `master` branch, `images/` folder with relative links, and a post-push check that pages and images return 200.
 

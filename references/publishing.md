@@ -76,6 +76,7 @@ There is no REST API. A GitHub wiki is a git repo.
 - The default branch is `master`. Push there.
 - Show the diff and ask before `git push`. Wikis have no PRs.
 - After the push, fetch `https://github.com/<owner>/<repo>/wiki/<Page>` and check for HTTP 200, and check each image path returns 200 after redirects.
+- After removing test files, check the page URL (it redirects once the page is gone) and list the wiki repo. Do not rely on the raw image URL: `raw.githubusercontent.com` kept serving a deleted image after the removal commit. The files also stay in the wiki's git history.
 
 ## Screenshots on a page
 

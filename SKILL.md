@@ -1,6 +1,6 @@
 ---
 name: scribeline
-description: Write and publish wiki pages, tickets and issues (QA run reports, findings, product notes, bug and feature requests) on GitHub or GitLab. Detects the platform and the right account from the repo, loads the team's house style from a profile, drafts in chat first and publishes only on a clear yes. Use when the user asks for a wiki page, QA report, findings write-up, ticket, issue, or "file this".
+description: Write and publish wiki pages, tickets and issues (QA run reports, findings, product notes, bug and feature requests) on GitHub or GitLab. Detects the platform and the right account from the repo, loads the team's house style from a profile, drafts in chat first and publishes only on a clear yes. Use when the user asks to write, draft, create or file a wiki page, QA report, findings write-up, ticket or issue, or says "file this". It covers writing and publishing the page or ticket, not implementing the work a ticket describes.
 ---
 
 # scribeline

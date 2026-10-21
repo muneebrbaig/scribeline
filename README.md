@@ -32,6 +32,10 @@ Ask Claude for a page or ticket: "write up this QA run on the wiki", "file this 
 3. Drafts in chat. Nothing is published yet.
 4. Publishes after a clear "create it", then checks the slug and links.
 
+### Invoking
+
+Type `/scribeline` to start it every time. Without the slash, Claude loads the skill when your request fits its description, for example "write up this QA run on the wiki", "create a ticket for this" or "file this as an issue". Claude makes that call from the skill's description, so a request that sounds like other work (say, implementing a ticket) may go to another skill. Use the slash command when you want it for sure. To turn off automatic loading, add `disable-model-invocation: true` to the frontmatter of `SKILL.md`.
+
 Run the resolver by hand to see what it decides:
 
 ```bash
