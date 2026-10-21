@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (2026-10-21)
+
+Wiki writes on GitLab now verify themselves, the resolver reports more of what the skill needs, and the workflow settles when to publish without a second question.
 
 ### Added
 - `scripts/page.py`: fills `{{placeholders}}` from a JSON map and refuses a leftover placeholder or an empty result. `gitlab put` creates or updates a wiki page, always sends the title, and checks the slug, the stored body and the wiki listing. `gitlab list` and `gitlab delete` round it out. Tests in `scripts/test_page.py`.
@@ -17,6 +19,10 @@
 - `references/publishing.md`: after removing GitHub wiki test files, check the page URL and the repo listing. Raw image URLs can outlive the file.
 - `references/publishing.md` has a "Screenshots on a page" section: collapsed `<details>` with a caption row and one image per cell, for both GitLab and GitHub.
 - GitHub wiki steps in `references/publishing.md` now reflect a live run: clone and push over the SSH alias, `master` branch, `images/` folder with relative links, and a post-push check that pages and images return 200.
+
+### Upgrading from 0.1.0
+- Pull the repo. If you linked the skill and agents with symlinks, nothing else changes. Restart Claude Code so it reloads the skill description and agent files.
+- The resolver's exit code is now 0 resolved, 2 unresolved, 3 blocked. A script that treated any non-zero exit as "could not run" still works.
 
 ## 0.1.0 (2026-10-21)
 
