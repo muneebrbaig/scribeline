@@ -53,9 +53,32 @@ There is no REST API. A GitHub wiki is a git repo.
 
 - The wiki repo does not exist until the first page is created in the web UI. Before that, a clone returns "Repository not found" even when `has_wiki` is true.
 - Use the resolver's `wiki_remote`. Its SSH alias selects the right key. Plain `git@github.com:` uses whichever key the machine offers first.
-- A page is one `.md` file named after its title (`Page-Name.md`). No folders in the sidebar. Put images in the wiki repo and link them by relative path.
-- `{width=230}` is GitLab-only. Use `<img src="…" width="230">`.
+- A page is one `.md` file named after its title (`Page-Name.md`). No folders in the sidebar. `Home.md` is the wiki's landing page (`/wiki`). Link pages with `[text](Page-Name)`.
+- Put images in an `images/` folder in the wiki repo and link them as `![alt](images/file.png)`. GitHub redirects that path to the raw file. Verified on a live wiki.
+- `{width=230}` is GitLab-only. Use `<img src="images/file.png" width="230">`.
+- The default branch is `master`. Push there.
 - Show the diff and ask before `git push`. Wikis have no PRs.
+- After the push, fetch `https://github.com/<owner>/<repo>/wiki/<Page>` and check for HTTP 200, and check each image path returns 200 after redirects.
+
+## Screenshots on a page
+
+Put screenshots in a collapsed section under the text they support, on both platforms. A caption row on top, one image per cell:
+
+```markdown
+<details>
+<summary>📷 Screenshots (2)</summary>
+
+| First caption | Second caption |
+|---|---|
+| ![First caption](uploads/…/a.png){width=230} | ![Second caption](uploads/…/b.png){width=230} |
+
+</details>
+```
+
+- Leave a blank line after `<summary>` and before `</details>`, or the table does not render.
+- GitLab: `![…](path){width=230}`. GitHub: `<img src="images/a.png" alt="…" width="230">`, because `{width=…}` is not supported there.
+- Several screenshots for one finding share one `<details>` and one table. Wrap to a second table for more than four.
+- The count in the summary is the number of images inside.
 
 ## After publishing
 

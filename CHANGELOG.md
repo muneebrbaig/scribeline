@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- `references/publishing.md` has a "Screenshots on a page" section: collapsed `<details>` with a caption row and one image per cell, for both GitLab and GitHub.
+- GitHub wiki steps in `references/publishing.md` now reflect a live run: clone and push over the SSH alias, `master` branch, `images/` folder with relative links, and a post-push check that pages and images return 200.
+
 ## 0.1.0 (2026-10-21)
 
 First release.
@@ -14,5 +20,4 @@ First release.
 - Unit tests for the resolver (`scripts/test_resolve.py`).
 
 ### Known gaps
-- The GitHub wiki steps are written from the documented behavior and have not run against a live wiki yet.
 - `--check` on GitLab probes the default `glab` login, not the alias login.
