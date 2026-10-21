@@ -139,6 +139,34 @@ class RepoConfig(Base):
         r = resolve.resolve(self.tmp.name, ssh_config=self.ssh, home=self.home)
         self.assertEqual(r["status"], "unresolved")
 
+    def test_first_run_until_any_config_exists(self):
+        d = self.make_repo("git@github.com-alice:o/r.git")
+        self.assertTrue(resolve.resolve(d, ssh_config=self.ssh, home=self.home)["first_run"])
+        os.makedirs(os.path.join(d, ".git", "info"), exist_ok=True)
+        json.dump({"prompted": True}, open(os.path.join(d, ".git", "info", "scribeline.json"), "w"))
+        self.assertFalse(resolve.resolve(d, ssh_config=self.ssh, home=self.home)["first_run"])
+
+    def test_issue_templates_listed(self):
+        d = self.make_repo("gitlab.com-bob:o/r.git")
+        self.assertEqual(resolve.resolve(d, ssh_config=self.ssh, home=self.home)["issue_templates"], [])
+        os.makedirs(os.path.join(d, ".gitlab", "issue_templates"))
+        os.makedirs(os.path.join(d, ".github", "ISSUE_TEMPLATE"))
+        for p in (".gitlab/issue_templates/Bug.md", ".github/ISSUE_TEMPLATE/bug.yml"):
+            open(os.path.join(d, p), "w").write("x")
+        got = resolve.resolve(d, ssh_config=self.ssh, home=self.home)["issue_templates"]
+        self.assertEqual(got, [".github/ISSUE_TEMPLATE/bug.yml", ".gitlab/issue_templates/Bug.md"])
+
+
+class ExitCodes(Base):
+    def code(self, remote, **kw):
+        with mock.patch.object(resolve, "resolve", return_value=kw):
+            return resolve.main(["--remote", remote])
+
+    def test_status_maps_to_exit_code(self):
+        self.assertEqual(self.code("x", status="resolved"), 0)
+        self.assertEqual(self.code("x", status="unresolved"), 2)
+        self.assertEqual(self.code("x", status="blocked"), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

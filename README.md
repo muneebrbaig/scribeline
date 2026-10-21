@@ -87,7 +87,7 @@ Both leave the prose alone. Drafting stays with the main model.
 ## Tests
 
 ```bash
-cd scripts && PYTHONPATH=. python3 -m unittest -q test_resolve
+cd scripts && PYTHONPATH=. python3 -m unittest -q test_resolve test_page
 ```
 
 ## License

@@ -5,11 +5,16 @@ Prints one JSON object. Never prints a token.
 
   resolve.py [--path DIR] [--remote URL] [--ssh-config FILE] [--home DIR] [--check]
 
+Exit code follows `status`: 0 resolved, 2 unresolved, 3 blocked.
+`first_run` is true in a git repo with neither personal nor team config.
+`issue_templates` lists issue forms found in the repo.
+
 Login precedence: repo-personal config > ssh alias label > owner rules in the registry.
 Profile precedence: repo-personal config > team config > registry profile rules.
 """
 import argparse
 import fnmatch
+import glob
 import json
 import os
 import re
@@ -17,6 +22,7 @@ import subprocess
 import sys
 
 KNOWN_HOSTS = {"github.com": "github", "gitlab.com": "gitlab"}
+EXIT_CODES = {"resolved": 0, "unresolved": 2, "blocked": 3}
 REMOTE_RE = [
     re.compile(r"^(?:ssh://)?(?:[^@/]+@)?(?P<host>[^:/]+)(?::\d+)?[:/](?P<path>[^/].*)$"),
     re.compile(r"^https?://(?:[^@/]+@)?(?P<host>[^/:]+)(?::\d+)?/(?P<path>.+)$"),
@@ -96,6 +102,16 @@ def git_paths(path):
     if not os.path.isabs(common):
         common = os.path.normpath(os.path.join(top, common))
     return top, common
+
+
+def issue_templates(top):
+    """Repo-relative paths of issue forms and templates, so the skill can't forget to read them."""
+    if not top:
+        return []
+    found = []
+    for pattern in (".github/ISSUE_TEMPLATE/*", ".gitlab/issue_templates/*", ".github/ISSUE_TEMPLATE.md"):
+        found += sorted(os.path.relpath(p, top) for p in glob.glob(os.path.join(top, pattern)) if os.path.isfile(p))
+    return found
 
 
 def match_rule(rules, owner, repo):
@@ -215,6 +231,8 @@ def resolve(path, remote=None, ssh_config=None, home=None, check=False):
         "wiki_remote": f"git@{alias or host}:{owner}/{repo}.wiki.git",
         "auth": auth, "profile": profile, "profile_file": profile_file,
         "team_config": team_path if team else None,
+        "first_run": bool(top) and not personal and not team,
+        "issue_templates": issue_templates(top),
         "status": "resolved" if platform != "unknown" and (login or platform == "gitlab") else "unresolved",
         "notes": notes,
     }
@@ -236,7 +254,9 @@ def main(argv=None):
     ap.add_argument("--home")
     ap.add_argument("--check", action="store_true", help="probe login and repo access")
     a = ap.parse_args(argv)
-    print(json.dumps(resolve(a.path, a.remote, a.ssh_config, a.home, a.check), indent=2))
+    result = resolve(a.path, a.remote, a.ssh_config, a.home, a.check)
+    print(json.dumps(result, indent=2))
+    return EXIT_CODES.get(result.get("status"), 2)
 
 
 if __name__ == "__main__":

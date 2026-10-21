@@ -24,6 +24,10 @@ python3 -I <skill-dir>/scripts/resolve.py --path <repo-dir> --check
 | `status` | `resolved`: go on. `unresolved`: ask the user which login, then save it (see "Config"). `blocked`: stop and report `access.reason` (for example "account suspended"). Do not fall back to another account without asking. |
 | `wiki_remote` | The wiki git URL with the right SSH alias. |
 | `profile_file` | Read it fully before drafting. |
+| `issue_templates` | Issue forms found in the repo. If the list is not empty and you are writing a ticket, read every file in it first and follow it. |
+| `first_run` | `true` when the clone has no personal or team config yet. See "Config". |
+
+The exit code follows `status`: 0 resolved, 2 unresolved, 3 blocked.
 
 **Acting as the resolved account:**
 
@@ -44,13 +48,13 @@ Three places, in order of precedence:
 | Repo, team | `<repo>/.scribeline.json` | `profile` name and shareable conventions. Never a login. | Yes, if committed |
 | User | `~/.config/scribeline/` (or `$SCRIBELINE_HOME`) | `accounts.json` (`hosts`, `aliases`, `owners`, `profiles` rules) and `profiles/<name>.md` | No |
 
-**First run in a repo with no team config**, ask once:
+**When the resolver says `first_run: true`**, offer the choice once, after the task is done. Never ahead of it, and never instead of it. An explicit request to create something is not blocked by this question.
 
 1. Add `.scribeline.json` to the repo so the team shares conventions. Write the file, show it, let the user commit it. Never commit it yourself.
 2. Keep it local. Write `.git/info/scribeline.json` instead (or append `.scribeline.json` to `.git/info/exclude` if the user wants a worktree file).
-3. Skip.
+3. Skip. Write `{"prompted": true}` to `.git/info/scribeline.json` so the question is not asked again.
 
-Agents and non-interactive runs default to 2. Repos the user does not own (client repos) default to 2 as well.
+Agents and non-interactive runs take option 2 without asking. Repos the user does not own (client repos) take option 2 as well.
 
 ## Profiles
 
@@ -61,8 +65,11 @@ If a profile names a stricter rule than this file, the profile wins.
 ## Defaults (no profile)
 
 - Product-person tone: full sentences, outcome first, no raw logs.
-- Run the user's prose-cleanup skill (for example `stop-slop`) on every draft if one is installed.
-- Draft in chat first. Publish only after a clear "create it", "file it" or "publish it". Wikis and issues are visible to the whole team.
+- Prose cleanup means invoking the user's cleanup skill (for example `stop-slop`) with the Skill tool on every draft. If it is not installed, apply the rules by hand and say so in the report. Do not report it as run when you only followed its rules from memory.
+- **The confirm gate.** Wikis and issues are visible to the whole team, so nothing is published without a yes. What counts as a yes:
+  - The user's request already says create, file or publish, and the user supplied the full text or said to go ahead without a draft: that is the yes. Publish, then report.
+  - The request says create, file or publish, but you write the content: draft in chat first and wait. The words "create it" approved the task, not text they have not seen.
+  - A repo the user does not own: always draft and wait.
 - Check for an existing page or issue on the topic first. Update, don't duplicate.
 - Treat ticket text as a claim. Verify against the code before writing "done" or "missing".
 - Never paste credentials, client data or personal data.
@@ -78,18 +85,32 @@ If a profile names a stricter rule than this file, the profile wins.
 
 See `references/publishing.md` for the exact `glab api`, `gh issue create` and GitHub-wiki git commands, and the pitfalls (slug read-back, uploads, `.wiki.git` not existing until the first page).
 
+## Evidence
+
+The skill does not capture or invent screenshots. The user supplies them, or the profile says where they live (for example a gitignored artifacts folder). If a page needs screenshots and none exist, say so and ask. Generated placeholder images are for tests only, and the page must say they are samples.
+
+On GitLab, uploaded attachments cannot be deleted through the API. Every test image stays in the project's uploads, so keep test runs to a few small images.
+
+## Testing the skill itself
+
+Use a sandbox slug the profile names, or `QA/Sandbox/<Name>` when it names none. Do not add a row to any index page for test content. Delete test pages and close test issues when done, and say which uploads remain.
+
 ## Workflow
 
 1. Resolve (step 0). Stop on `blocked`.
-2. Read the profile. Gather facts: logs, screenshots, the code or ticket the work refers to.
-3. Draft in chat and apply the prose cleanup. State assumptions.
-4. Revise until approved.
-5. Publish on a clear yes. For more than a few attachments, hand uploads to the `scribeline-publisher` agent. For a big evidence folder, use `scribeline-evidence` first.
-6. Verify the result: slug, links, attachments. Report the link, what was created, and anything left undone (index row, linked issues, failed images).
+2. Read the profile and any `issue_templates`. Gather facts: logs, screenshots, the code or ticket the work refers to.
+3. Draft in chat, fill any placeholders with `scripts/page.py fill` (never `sed` or shell substitution: a failed substitution produced an empty page once), and run the prose cleanup. State assumptions.
+4. Revise until the confirm gate is met.
+5. Publish. On a GitLab wiki use `scripts/page.py gitlab put`. It always sends the title, so an update cannot move the page to the wiki root, and it refuses an empty body. On other targets follow `references/publishing.md`.
+6. Verify after every write. On a GitLab wiki, a page write is not done until `page.py` reports `ok: true`: the slug is the one you intended, the body read back is not empty and matches, and the page is in the wiki listing. On a GitHub wiki, fetch each page and image after the push and expect HTTP 200. For issues, link the `web_url` that the API returns, not a URL you assembled.
+7. Report the link, what was created, and anything left undone (index row, linked issues, failed images). Say plainly what was not checked. For example, uploaded images on a private GitLab project need a sign-in, so confirm they render by opening the page in a browser, or tell the user you did not.
 
 ## Delegation to a smaller model
 
 Both agents run on Haiku with a narrow brief and a fixed output shape. They never edit prose.
+
+- Use `scribeline-publisher` when a page has **5 or more attachments**. Below that, run the uploads yourself.
+- Use `scribeline-evidence` when an evidence folder has **10 or more files**.
 
 - `agents/scribeline-evidence.md`: map screenshots and JSON files to finding IDs. Input: the folder, the list of finding IDs. Output: a table plus orphans on both sides.
 - `agents/scribeline-publisher.md`: upload attachments, create or update the page, read back the slug, check every link. Input: page file, attachment folder, resolver JSON. Output: `RESULT: ok | fail` plus URLs.

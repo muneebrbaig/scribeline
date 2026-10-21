@@ -21,11 +21,24 @@ GH_TOKEN=$(gh auth token --hostname github.com -u <login>) \
 glab issue create --repo <owner>/<repo> --title "<title>" --description "$(cat <file>)" [--label <label>]
 ```
 
-Check the project's labels first. Do not invent them.
+Check the project's labels first. Do not invent them. If `issue_templates` in the resolver output is not empty, follow those files.
+
+- The create command may print a `/-/work_items/<n>` URL. Link the `web_url` the API returns for that issue (`glab api projects/<ns>%2F<project>/issues/<n> | jq -r .web_url`), not a `/-/issues/<n>` URL you assembled.
+- Close a test issue: `glab issue close <n> --repo <owner>/<repo>`.
 
 ## GitLab wiki
 
-`glab` has no wiki subcommand. Use `glab api`. `-F` is a JSON field, not a file upload. Uploads need `--form`, which cannot be mixed with `-f` in the same call.
+`glab` has no wiki subcommand. Use `glab api`, or better, `scripts/page.py`, which wraps the calls below and checks the result:
+
+```bash
+python3 -I <skill-dir>/scripts/page.py gitlab put    --repo <ns>/<project> --title "<Section>/<Name>" --file page.md
+python3 -I <skill-dir>/scripts/page.py gitlab list   --repo <ns>/<project>
+python3 -I <skill-dir>/scripts/page.py gitlab delete --repo <ns>/<project> --slug "<Section>/<Name>"
+```
+
+`put` exits 0 only when the slug, the stored body and the listing all check out. Fill placeholders with `page.py fill`, not `sed`: a failed substitution once produced an empty page that the API accepted.
+
+Raw calls, if you need them. `-F` is a JSON field, not a file upload. Uploads need `--form`, which cannot be mixed with `-f` in the same call.
 
 ```bash
 # Attachment, one call per file. link.url in the response is the path to use in the page.
@@ -40,9 +53,13 @@ glab api "projects/<ns>%2F<project>/wikis/<slug-url-encoded>" -X PUT \
   -f "format=markdown" -f "content=$(cat page.md)"
 ```
 
-- `content` does not accept `--form "content=@file"`. Pass the raw string through `$(cat …)`.
+- On update, always pass `-f "title=<Section>/<Name>"` too. A PUT without `title` re-derives the title from the slug's last segment and moves the page to the wiki root.
+- `content` does not accept `--form "content=@file"`. Pass the raw string through `$(cat …)`, and check that it is not empty. The API accepts `content=""`.
 - Slug paths only group the sidebar. They do not nest pages.
-- After creating, read back the returned `slug` and confirm it landed where intended. A page once landed at the wiki root.
+- After every write, read back the `slug` and the body, and list the wiki (`GET projects/<ns>%2F<project>/wikis`) to confirm placement. Pages have landed at the wiki root twice.
+- Delete a page: `glab api "projects/<ns>%2F<project>/wikis/<slug-url-encoded>" -X DELETE`.
+- Attachments cannot be deleted through the API. Test uploads stay in the project for good.
+- Wiki upload URLs need a sign-in on private projects, so a script cannot confirm that images render. Open the page in a browser, or say you did not check.
 - Image cells: `![caption](uploads/<hash>/<file>){width=230}`.
 - If multipart misbehaves, fall back to `curl` with the token from the glab config.
 - A local clone of the wiki (`<repo>.wiki.git`) is fine for reading and diffing. Prefer the API for writes.

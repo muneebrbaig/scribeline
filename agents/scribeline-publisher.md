@@ -19,7 +19,7 @@ Steps:
 3. Upload each attachment one by one. Record the returned URL for each. Do not zip. On a failed upload, retry once, then record the failure and continue.
 4. Replace each local image path in a copy of the page with its uploaded URL. Leave the caller's file untouched.
 5. Create or update the page with the copy.
-   - GitLab: `glab api` as in `references/publishing.md`.
+   - GitLab: `python3 -I <skill-dir>/scripts/page.py gitlab put --repo <owner>/<repo> --title "<slug>" --file <copy>`. It always sends the title and checks the slug, the stored body and the listing. Report its JSON. Never call a page published unless it says `"ok": true`.
    - GitHub wiki: clone `wiki_remote`, write the file, show `git diff --stat`, and stop. Do not push. The caller asks the user first.
 6. Read the page back. Confirm the returned slug is the intended one. List every image and link in the page and check each resolves.
 7. Write long output to a file under the scratchpad and read from it. Do not paste logs back.
